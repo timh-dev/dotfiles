@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-# Simple welcome script to manually trigger dotfiles dashboard
-dotfiles dashboard

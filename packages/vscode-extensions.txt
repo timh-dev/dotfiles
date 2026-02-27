@@ -1,0 +1,66 @@
+# VSCode Extensions
+# Install with: cat packages/vscode-extensions.txt | xargs -L 1 code --install-extension
+
+# Python
+ms-python.python
+ms-python.vscode-pylance
+ms-python.black-formatter
+charliermarsh.ruff
+
+# JavaScript/TypeScript/React
+dbaeumer.vscode-eslint
+esbenp.prettier-vscode
+bradlc.vscode-tailwindcss
+dsznajder.es7-react-js-snippets
+
+# Docker
+ms-azuretools.vscode-docker
+
+# Terraform
+hashicorp.terraform
+
+# Git
+eamodio.gitlens
+mhutchie.git-graph
+
+# GitHub
+github.copilot
+github.copilot-chat
+github.vscode-pull-request-github
+
+# Markdown
+yzhang.markdown-all-in-one
+davidanson.vscode-markdownlint
+
+# YAML/JSON
+redhat.vscode-yaml
+tamasfe.even-better-toml
+
+# Themes
+zhuangtongfa.material-theme
+pkief.material-icon-theme
+github.github-vscode-theme
+
+# Utilities
+usernamehw.errorlens
+streetsidesoftware.code-spell-checker
+gruntfuggly.todo-tree
+wayou.vscode-todo-highlight
+christian-kohler.path-intellisense
+formulahendry.auto-rename-tag
+formulahendry.code-runner
+
+# Remote Development
+ms-vscode-remote.remote-ssh
+ms-vscode-remote.remote-containers
+
+# Database
+mtxr.sqltools
+mtxr.sqltools-driver-pg
+mtxr.sqltools-driver-mysql
+
+# REST Client
+humao.rest-client
+
+# Live Share
+ms-vsliveshare.vsliveshare

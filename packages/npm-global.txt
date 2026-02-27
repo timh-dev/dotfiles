@@ -1,0 +1,62 @@
+# Global NPM Packages
+# Install with: npm install -g $(cat packages/npm-global.txt | tr '\n' ' ')
+# Or with pnpm: pnpm add -g $(cat packages/npm-global.txt | tr '\n' ' ')
+
+# TypeScript
+typescript
+ts-node
+tsx
+
+# React/Next.js
+create-react-app
+create-next-app
+
+# Build Tools
+vite
+webpack
+webpack-cli
+esbuild
+
+# Linting/Formatting
+eslint
+prettier
+@typescript-eslint/parser
+@typescript-eslint/eslint-plugin
+
+# Testing
+jest
+vitest
+
+# Package Management
+npm-check-updates
+npm-check
+
+# Development Servers
+http-server
+live-server
+nodemon
+
+# Utilities
+concurrently
+cross-env
+dotenv-cli
+rimraf
+
+# Database
+prisma
+
+# AWS
+aws-cdk
+serverless
+
+# Documentation
+jsdoc
+typedoc
+
+# Performance
+lighthouse
+clinic
+
+# Misc
+tldr
+trash-cli

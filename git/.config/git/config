@@ -1,0 +1,127 @@
+[user]
+	name = Holmes, Timothy (Contractor)
+	email = THolmes1+sempra@sdgecontractor.com
+
+[core]
+    editor = vim
+    autocrlf = input
+    excludesfile = ~/.config/git/ignore
+
+[push]
+    default = simple
+    autoSetupRemote = true
+
+[pull]
+    rebase = false
+
+[init]
+    defaultBranch = main
+
+[alias]
+    # Status
+    st = status
+    s = status -sb
+    
+    # Add
+    a = add
+    aa = add --all
+    ap = add --patch
+    
+    # Commit
+    ci = commit
+    cm = commit -m
+    ca = commit --amend
+    can = commit --amend --no-edit
+    cf = commit --fixup
+    
+    # Branch
+    br = branch
+    ba = branch -a
+    bd = branch -d
+    bD = branch -D
+    
+    # Checkout
+    co = checkout
+    cb = checkout -b
+    
+    # Push/Pull
+    p = push
+    pf = push --force-with-lease
+    pl = pull
+    pr = pull --rebase
+    pu = push -u origin HEAD
+    
+    # Fetch
+    f = fetch
+    fa = fetch --all
+    fo = fetch origin
+    
+    # Diff
+    df = diff
+    ds = diff --staged
+    dc = diff --cached
+    dw = diff --word-diff
+    
+    # Log
+    l = log --oneline --decorate --graph
+    la = log --oneline --decorate --graph --all
+    lg = log --graph --pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset" --abbrev-commit
+    ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+    last = log -1 HEAD --stat
+    
+    # Stash
+    sta = stash
+    staa = stash apply
+    stap = stash pop
+    stl = stash list
+    std = stash drop
+    stc = stash clear
+    
+    # Reset
+    unstage = reset HEAD --
+    undo = reset --soft HEAD~1
+    
+    # Rebase
+    rb = rebase
+    rbi = rebase -i
+    rbc = rebase --continue
+    rba = rebase --abort
+    
+    # Remote
+    r = remote
+    rv = remote -v
+    ra = remote add
+    rrm = remote remove
+    
+    # Worktree
+    wt = worktree
+    wta = worktree add
+    wtl = worktree list
+    wtr = worktree remove
+    
+    # Misc
+    visual = !gitk
+    amend = commit --amend
+    wip = commit -am "WIP"
+    unwip = reset HEAD~1
+
+[color]
+    ui = auto
+
+[diff]
+    tool = vimdiff
+
+[merge]
+    tool = vimdiff
+
+[credential]
+    helper = osxkeychain
+
+[include]
+    path = ~/.config/git/config.local
+
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f

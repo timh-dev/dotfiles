@@ -1,0 +1,17 @@
+# Oh My Zsh Plugins
+# Core plugins (built-in)
+git
+docker
+npm
+python
+terraform
+dirhistory
+web-search
+copyfile
+
+# Custom plugins (need to be installed)
+zsh-autosuggestions
+zsh-syntax-highlighting
+zsh-bat
+zsh-z
+you-should-use

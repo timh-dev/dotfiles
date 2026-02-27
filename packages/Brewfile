@@ -1,0 +1,159 @@
+# ============================================================================
+# Homebrew Bundle - All packages and apps
+# Install with: brew bundle --file=packages/Brewfile
+# ============================================================================
+
+# Taps
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/cask-fonts"
+
+# ============================================================================
+# Core Tools
+# ============================================================================
+brew "git"
+brew "vim"
+brew "tmux"
+brew "zsh"
+brew "stow"
+brew "make"
+brew "cmake"
+brew "wget"
+brew "curl"
+
+# ============================================================================
+# Shell Enhancements
+# ============================================================================
+brew "starship"          # Modern prompt
+brew "thefuck"           # Command correction
+brew "zsh-autosuggestions"
+brew "zsh-syntax-highlighting"
+brew "bat"               # Better cat
+brew "eza"               # Better ls
+brew "fzf"               # Fuzzy finder
+brew "ripgrep"           # Better grep
+brew "fd"                # Better find
+brew "jq"                # JSON processor
+brew "yq"                # YAML processor
+
+# ============================================================================
+# Development Tools
+# ============================================================================
+
+# Version Control
+brew "gh"                # GitHub CLI
+brew "git-lfs"
+
+# Python
+brew "python@3.11"
+brew "python@3.12"
+brew "uv"                # Modern Python package manager
+brew "pipx"
+brew "pyenv"
+
+# Node.js
+brew "node"
+brew "nvm"
+brew "pnpm"
+brew "yarn"
+
+# Docker
+brew "docker"
+brew "docker-compose"
+brew "colima"            # Docker runtime for macOS
+
+# Terraform
+brew "terraform"
+brew "terraform-docs"
+brew "tflint"
+brew "terragrunt"
+
+# AWS
+brew "awscli"
+brew "aws-sam-cli"
+brew "aws-vault"
+
+# Databases
+brew "postgresql@15"
+brew "mysql"
+brew "sqlite"
+brew "redis"
+
+# Other Dev Tools
+brew "act"               # Run GitHub Actions locally
+brew "direnv"            # Environment switcher
+brew "httpie"            # Better curl
+brew "tree"
+brew "watch"
+brew "htop"
+brew "ncdu"              # Disk usage analyzer
+
+# ============================================================================
+# Applications (Casks)
+# ============================================================================
+
+# Terminal
+cask "ghostty"
+cask "iterm2"
+
+# Editors & IDEs
+cask "visual-studio-code"
+cask "cursor"            # AI-powered editor
+
+# Browsers
+cask "google-chrome"
+
+# Development
+cask "docker"
+cask "postman"
+cask "insomnia"
+cask "tableplus"         # Database GUI
+cask "dbeaver-community"
+
+# Productivity
+cask "obsidian"          # Note-taking
+cask "raycast"           # Spotlight replacement
+cask "rectangle"         # Window management
+cask "alfred"
+
+# Communication
+cask "slack"
+cask "discord"
+cask "zoom"
+
+# Utilities
+cask "1password"
+cask "bitwarden"
+cask "monitorcontrol"
+cask "shottr"            # Screenshots
+cask "jordanbaird-ice"   # Menu bar manager
+cask "syncthing"
+
+# Media
+cask "spotify"
+cask "vlc"
+
+# Fonts
+cask "font-fira-code-nerd-font"
+cask "font-jetbrains-mono-nerd-font"
+cask "font-meslo-lg-nerd-font"
+
+# ============================================================================
+# Optional (comment out if not needed)
+# ============================================================================
+
+# Data Engineering
+# brew "dbt"
+# brew "apache-spark"
+
+# Cloud Tools
+# brew "azure-cli"
+# brew "gcloud"
+
+# Kubernetes
+# brew "kubectl"
+# brew "helm"
+# brew "k9s"
+
+# VS Code Extensions (installed separately)
+# See packages/vscode-extensions.txt

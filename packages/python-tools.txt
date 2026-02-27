@@ -1,0 +1,79 @@
+# Python Tools (install with UV)
+# Install with: uv tool install <package>
+
+# Core Tools
+uv
+ruff
+black
+isort
+mypy
+pylint
+flake8
+
+# Testing
+pytest
+pytest-cov
+pytest-watch
+hypothesis
+
+# Documentation
+sphinx
+mkdocs
+mkdocs-material
+
+# Jupyter
+jupyter
+jupyterlab
+ipython
+notebook
+
+# Data Science
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+
+# Web Frameworks
+flask
+fastapi
+django
+
+# AWS
+boto3
+awscli
+aws-sam-cli
+
+# DBT
+dbt-core
+dbt-postgres
+dbt-snowflake
+dbt-bigquery
+
+# Database
+sqlalchemy
+psycopg2-binary
+pymysql
+
+# HTTP
+requests
+httpx
+aiohttp
+
+# CLI Tools
+click
+typer
+rich
+textual
+
+# Utilities
+python-dotenv
+pydantic
+pendulum
+arrow
+
+# Development
+pre-commit
+cookiecutter
+pipx
+poetry
