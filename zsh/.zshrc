@@ -8,7 +8,7 @@ ZSH_THEME=""
 
 plugins=(
     git docker npm python terraform
-    zsh-autosuggestions zsh-syntax-highlighting zsh-z
+    zsh-autosuggestions zsh-z zsh-syntax-highlighting
 )
 
 source $ZSH/oh-my-zsh.sh

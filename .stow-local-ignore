@@ -9,5 +9,4 @@
 \.gitignore
 Makefile
 install\.sh
-bootstrap\.sh
 iterm-profiles\.json
