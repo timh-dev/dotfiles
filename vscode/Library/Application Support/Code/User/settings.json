@@ -49,7 +49,7 @@
   "[python]": {
     "editor.detectIndentation" : false,
     "editor.insertSpaces": true,
-    "editor.tabSize": 4  
+    "editor.tabSize": 4
   },
   // terminal
   "terminal.integrated.fontSize": 14,

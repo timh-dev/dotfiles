@@ -23,7 +23,7 @@ setopt HIST_IGNORE_ALL_DUPS HIST_FIND_NO_DUPS HIST_SAVE_NO_DUPS
 # ============================================================================
 # PATH
 # ============================================================================
-export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$HOME/.local/bin:$HOME/Documents/development/personal/dotfiles/scripts/bin:$PATH"
+export PATH="/opt/homebrew/bin:$HOME/.cargo/bin:$HOME/.local/bin:$HOME/dotfiles/scripts/bin:$PATH"
 
 # ============================================================================
 # Tools
@@ -68,7 +68,7 @@ fi
 # ============================================================================
 # Dotfiles
 # ============================================================================
-DOTFILES="$HOME/Documents/development/personal/dotfiles"
+DOTFILES="$HOME/dotfiles"
 
 [ -d "$DOTFILES/aliases" ] && for f in "$DOTFILES"/aliases/*.zsh(N); do [ -r "$f" ] && source "$f"; done
 [ -d "$DOTFILES/functions" ] && for f in "$DOTFILES"/functions/*.zsh(N); do [ -r "$f" ] && source "$f"; done

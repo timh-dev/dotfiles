@@ -23,7 +23,10 @@ cd ~/dotfiles
 # Link dotfiles into ~
 make link
 
-# Optionally install packages (brew, npm, python, etc.)
+# Install zsh plugins (required for .zshrc to load without errors)
+make zsh
+
+# Optionally install other packages (brew, npm, python, etc.)
 make packages
 ```
 
@@ -61,7 +64,7 @@ make packages   # All of the above
 | `vim`      | `vim/.vimrc`                       | `~/.vimrc`                                 |
 | `tmux`     | `tmux/.tmux.conf`                  | `~/.tmux.conf`                             |
 | `starship` | `starship/.config/starship.toml`   | `~/.config/starship.toml`                  |
-| `vscode`   | `vscode/.config/Code/User/...`     | `~/.config/Code/User/...`                  |
+| `vscode`   | `vscode/Library/Application Support/Code/User/...` | `~/Library/Application Support/Code/User/...` |
 | `ghostty`  | `ghostty/Library/Application Support/...` | `~/Library/Application Support/...` |
 
 ## Not Linked (sourced or added to PATH)

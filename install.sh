@@ -17,10 +17,14 @@ for package in */; do
     [[ "$package" =~ ^(aliases|functions|packages|scripts|bin)$ ]] && continue
 
     echo "  Stowing $package"
-    stow -R "$package" 2>/dev/null || {
-        echo "  Warning: failed to stow $package (may already exist)"
-        continue
-    }
+    if ! stow -R "$package" 2>/dev/null; then
+        echo "  Conflict in $package — adopting and restoring dotfiles version"
+        stow --adopt "$package" 2>/dev/null && git restore "$package/" 2>/dev/null || {
+            echo "  Warning: could not resolve conflict for $package"
+            continue
+        }
+        stow -R "$package" 2>/dev/null
+    fi
 done
 
 echo "Done. Restart your terminal or run: source ~/.zshrc"

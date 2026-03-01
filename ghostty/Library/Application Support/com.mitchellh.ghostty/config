@@ -27,7 +27,7 @@ keybind = cmd+t=new_tab
 keybind = cmd+k=clear_screen
 keybind = ctrl+z=close_surface
 keybind = ctrl+super+f=toggle_fullscreen
-keybind = global:ctrl+space=toggle_quick_terminal
+keybind = global:option+space=toggle_quick_terminal
 
 # Mouse Config
 mouse-hide-while-typing = true
@@ -40,3 +40,9 @@ macos-icon-screen-color = #005f87
 
 #ssh fix
 TERM=xterm-256color /usr/bin/bash
+
+# quick terminal
+quick-terminal-position = "center"
+# (80% width, 60% height)
+quick-terminal-size = "80%,60%"
+quick-terminal-autohide = false
