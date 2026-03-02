@@ -50,3 +50,4 @@ topics/
 bootstrap.sh
 deploy.sh
 installation/
+scripts/bin/qmenu

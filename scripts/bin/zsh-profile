@@ -1,9 +1,0 @@
-#!/bin/zsh
-# Profile zsh startup time
-
-PROFILE_LOG="/tmp/zsh-profile.$$.log"
-
-zsh -i -c "zmodload zsh/zprof && zprof" 2>&1 | tee "$PROFILE_LOG"
-
-echo ""
-echo "Detailed timing saved to: $PROFILE_LOG"

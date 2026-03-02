@@ -11,7 +11,7 @@ function menu() {
     cols=${cols:-100}
     
     local title="${yellow}Quick Actions${reset}"
-    local menu="   ${cyan}?${reset} help      ${cyan}p${reset} projects    ${cyan}c${reset} config"
+    local menu="   ${cyan}?${reset} help      ${cyan}p${reset} projects    ${cyan}c${reset} config    ${cyan}b${reset} bookmarks"
     
     # Calculate visible lengths and center
     local title_len=$(echo -e "$title" | perl -pe 's/\033\[[0-9;]*m//g' | wc -m | tr -d ' ')
@@ -34,7 +34,7 @@ function menu() {
 
 # Help menu
 function qhelp() {
-    local qmenu_bin="$HOME/Documents/development/personal/dotfiles/scripts/bin/qmenu"
+    local qmenu_bin="$HOME/dotfiles/scripts/bin/qmenu"
     if [[ -x "$qmenu_bin" ]]; then
         "$qmenu_bin" help
     else
@@ -44,7 +44,7 @@ function qhelp() {
 
 # Projects browser
 function qopen() {
-    local qmenu_bin="$HOME/Documents/development/personal/dotfiles/scripts/bin/qmenu"
+    local qmenu_bin="$HOME/dotfiles/scripts/bin/qmenu"
     if [[ -x "$qmenu_bin" ]]; then
         "$qmenu_bin" projects
     else
@@ -54,9 +54,19 @@ function qopen() {
 
 # Config editor
 function qedit() {
-    local qmenu_bin="$HOME/Documents/development/personal/dotfiles/scripts/bin/qmenu"
+    local qmenu_bin="$HOME/dotfiles/scripts/bin/qmenu"
     if [[ -x "$qmenu_bin" ]]; then
         "$qmenu_bin" config
+    else
+        echo "qmenu not built. Run: make qmenu"
+    fi
+}
+
+# Bookmarks browser
+function qbookmarks() {
+    local qmenu_bin="$HOME/dotfiles/scripts/bin/qmenu"
+    if [[ -x "$qmenu_bin" ]]; then
+        "$qmenu_bin" bookmarks
     else
         echo "qmenu not built. Run: make qmenu"
     fi
