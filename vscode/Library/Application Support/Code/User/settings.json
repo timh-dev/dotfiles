@@ -18,7 +18,7 @@
   "window.zoomLevel": -1,
   "window.density.editorTabHeight": "compact",
   "window.restoreWindows": "all",
-  "window.nativeTabs": false,
+  "window.nativeTabs": true,
   "window.newWindowDimensions": "inherit",
   // explorer
   "explorer.confirmDragAndDrop": false,

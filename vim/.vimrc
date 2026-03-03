@@ -44,8 +44,8 @@ set shiftwidth=4
 set expandtab
 
 " Custom conceal
-syntax match todoCheckbox "\[\ \]" conceal cchar=
-syntax match todoCheckbox "\[x\]" conceal cchar=
+syntax match todoCheckbox "\[\ \]" conceal cchar=☐
+syntax match todoCheckbox "\[x\]" conceal cchar=☑
 syntax match todoCheckbox "\[-\]" conceal cchar=☒
 syntax match todoCheckbox "\[\.\]" conceal cchar=⊡
 syntax match todoCheckbox "\[o\]" conceal cchar=⬕
