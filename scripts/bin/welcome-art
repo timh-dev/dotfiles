@@ -1,0 +1,508 @@
+#!/usr/bin/env perl
+# ============================================================================
+# welcome-art: draws the Great Lakes for the welcome screen
+# ============================================================================
+#
+# Looks are driven by ~/.config/welcome/welcome.conf (color schemes, glyphs,
+# pins, load animation). Any setting can be overridden on the command line to
+# preview it without editing the file:
+#
+#   welcome-art --scheme classic --glyphs blocks --glyph-mode depth
+#   welcome-art --animation ripple --duration 1.5
+#   welcome-art --list
+#
+# The map itself lives at the bottom of this file (after __DATA__).
+
+use strict;
+use warnings;
+use utf8;
+use open qw(:std :encoding(UTF-8));
+use Getopt::Long qw(:config no_ignore_case);
+use List::Util qw(max min shuffle);
+use POSIX qw(strftime);
+use Time::HiRes qw(sleep time);
+use Encode qw(decode_utf8);
+
+@ARGV = map { decode_utf8($_) } @ARGV;
+my %cli;
+GetOptions(\%cli,
+    "config=s", "scheme=s", "glyphs=s", "glyph-mode=s", "glints=f", "pins=s",
+    "animation=s", "duration=f", "width=i", "height=i", "color=s",
+    "no-animation", "list", "help|h",
+) or exit 2;
+
+if ($cli{help}) {
+    print <<~'EOF';
+    Usage: welcome-art [options]
+
+      --scheme NAME        color scheme (see --list), "random" or "auto"
+      --glyphs NAME|CHARS  glyph set name, or literal characters like "•·"
+      --glyph-mode MODE    uniform | random | depth | lake
+      --glints N           chance a dot sparkles (0 to disable)
+      --pins "A B"         places to pin (see --list), or "none"
+      --animation STYLE    none | fill | sweep | ripple | rain | shimmer | random
+      --duration SECONDS   animation length
+      --no-animation       draw the final frame only
+      --color MODE         truecolor | 256 | none (default: detect)
+      --width N            terminal columns (default: $COLUMNS)
+      --height N           terminal rows (default: $LINES)
+      --config PATH        config file (default: ~/.config/welcome/welcome.conf)
+      --list               show available schemes, glyph sets, places, animations
+    EOF
+    exit 0;
+}
+
+# ----------------------------------------------------------------------------
+# Map
+# ----------------------------------------------------------------------------
+
+my @map = map { chomp; s/^\|//; s/\|$//; [split //] } grep { /^\|/ } <DATA>;
+my ($H, $W) = (scalar @map, 100);
+my $wet = sub { my ($r, $c) = @_; $r >= 0 && $r < $H && $c >= 0 && $c < $W && ($map[$r][$c] // "") eq "•" };
+
+# Which lake a cell belongs to (row/col are 0-based)
+my @LAKES = qw(superior michigan huron erie ontario);
+sub lake_of {
+    my ($r, $c) = @_;
+    return "superior" if ($r <= 8 && $c < 48) || ($r == 9 && $c < 36);
+    return "michigan" if $c < 50;
+    return "ontario"  if $r <= 14 && $c >= 76;
+    return "erie"     if $r >= 21 || ($r >= 14 && $c >= 66);
+    return "huron";
+}
+
+# Places that can be pinned, as [row, col] on the map
+my %PLACES = (
+    chicago       => [23, 29],
+    milwaukee     => [19, 27],
+    duluth        => [8, 0],
+    thunder_bay   => [0, 33],
+    marquette     => [9, 28],
+    sault_ste_marie => [8, 47],
+    traverse_city => [11, 45],
+    ann_arbor     => [21, 55],
+    detroit       => [21, 59],
+    cleveland     => [22, 71],
+    buffalo       => [15, 81],
+    toronto       => [11, 82],
+);
+
+# ----------------------------------------------------------------------------
+# Config
+# ----------------------------------------------------------------------------
+
+my $config_path = $cli{config}
+    // (($ENV{XDG_CONFIG_HOME} || "$ENV{HOME}/.config") . "/welcome/welcome.conf");
+
+# Minimal INI: [section], key = value, whole-line # or ; comments
+sub read_config {
+    my ($path) = @_;
+    my %cfg;
+    open(my $fh, "<", $path) or return \%cfg;
+    my $section = "art";
+    while (my $line = <$fh>) {
+        next if $line =~ /^\s*(?:[#;].*)?$/;
+        if ($line =~ /^\s*\[\s*([^\]]+?)\s*\]/) {
+            $section = lc $1;
+        } elsif ($line =~ /^\s*([\w.-]+)\s*=\s*(.*?)\s*$/) {
+            $cfg{$section}{lc $1} = $2;
+        } else {
+            warn "welcome-art: ignoring line $. of $path: $line";
+        }
+    }
+    return \%cfg;
+}
+my $cfg = read_config($config_path);
+
+my %art = (
+    scheme => "lakes", glyphs => "dots", glyph_mode => "uniform", glints => 0.03,
+    glint_color => "#ebf8ff", pins => "chicago", pin_glyph => "⬤", pin_color => "#4ade80",
+    %{ $cfg->{art} // {} },
+);
+my %anim = (style => "none", duration => 0.7, when => "always", %{ $cfg->{animation} // {} });
+$art{scheme}     = $cli{scheme}       if defined $cli{scheme};
+$art{glyphs}     = $cli{glyphs}       if defined $cli{glyphs};
+$art{glyph_mode} = $cli{"glyph-mode"} if defined $cli{"glyph-mode"};
+$art{glints}     = $cli{glints}       if defined $cli{glints};
+$art{pins}       = $cli{pins}         if defined $cli{pins};
+$anim{style}     = $cli{animation}    if defined $cli{animation};
+$anim{duration}  = $cli{duration}     if defined $cli{duration};
+$anim{style}     = "none"             if $cli{"no-animation"};
+
+# Built-in fallbacks so the art works even without a config file
+my %schemes = (
+    lakes => {
+        type => "depth",
+        superior => "#8fd3ff #1f4fbf", michigan => "#7fe0e8 #1769aa", huron => "#8be9d6 #1a7f9e",
+        erie => "#a7f0c0 #2a8f86", ontario => "#9ec9ff #3b5bd6",
+    },
+    classic => { type => "random", colors => "blue yellow red magenta cyan default default default" },
+);
+for my $sec (keys %$cfg) {
+    $schemes{$1} = $cfg->{$sec} if $sec =~ /^scheme\.(.+)$/;
+}
+my %glyph_sets = (dots => "•", %{ $cfg->{glyphs} // {} });
+my %places = (%PLACES, map { lc($_) => [split /\s*,\s*/, $cfg->{places}{$_}] } keys %{ $cfg->{places} // {} });
+
+my @ANIMATIONS = qw(none fill sweep ripple rain shimmer);
+
+if ($cli{list}) {
+    print "config:     $config_path", (-e $config_path ? "" : " (not found, using defaults)"), "\n";
+    print "schemes:    ", join(" ", sort keys %schemes), " (or random, auto)\n";
+    print "glyphs:     ", join("  ", map { "$_ ($glyph_sets{$_})" } sort keys %glyph_sets), "\n";
+    print "modes:      uniform random depth lake\n";
+    print "places:     ", join(" ", sort keys %places), "\n";
+    print "animations: ", join(" ", @ANIMATIONS), " random\n";
+    exit 0;
+}
+
+# ----------------------------------------------------------------------------
+# Colors
+# ----------------------------------------------------------------------------
+
+my %ANSI = (black => 0, red => 1, green => 2, yellow => 3, blue => 4, magenta => 5, cyan => 6, white => 7);
+# Rough RGB for ANSI names, used when one shows up in a gradient
+my %ANSI_RGB = (
+    black => [0, 0, 0], red => [205, 49, 49], green => [13, 188, 121], yellow => [229, 229, 16],
+    blue => [36, 114, 200], magenta => [188, 63, 188], cyan => [17, 168, 205], white => [229, 229, 229],
+    default => [200, 200, 200],
+);
+
+# A color is {rgb => [r,g,b]} or {ansi => n, bright => 0|1} or {} for the terminal default
+sub parse_color {
+    my ($s) = @_;
+    $s = lc($s // "default");
+    return { rgb => [map { hex } $1 =~ /(..)(..)(..)/] } if $s =~ /^#?([0-9a-f]{6})$/;
+    return { rgb => [map { hex("$_$_") } split //, $1] } if $s =~ /^#?([0-9a-f]{3})$/;
+    my $bright = $s =~ s/^bright[-_]?//;
+    return { ansi => $ANSI{$s}, bright => $bright ? 1 : 0, name => $s } if exists $ANSI{$s};
+    warn "welcome-art: unknown color '$s', using default\n" unless $s eq "default" || $s eq "none";
+    return {};
+}
+sub parse_colors { [map { parse_color($_) } split ' ', ($_[0] // "")] }
+sub rgb_of { my ($c) = @_; $c->{rgb} // $ANSI_RGB{ $c->{name} // "default" } }
+sub mix {
+    my ($a, $b, $t) = @_;
+    return [map { int($a->[$_] + ($b->[$_] - $a->[$_]) * $t + 0.5) } 0 .. 2];
+}
+sub ramp {    # sample a list of RGB stops at t in [0,1]
+    my ($stops, $t) = @_;
+    return $stops->[0] if @$stops == 1;
+    $t = 0 if $t < 0;
+    $t = 1 if $t > 1;
+    my $pos = $t * $#$stops;
+    my $i = $pos >= $#$stops ? $#$stops - 1 : int($pos);
+    return mix($stops->[$i], $stops->[$i + 1], $pos - $i);
+}
+
+my $color_mode = $cli{color} // (
+    defined $ENV{NO_COLOR} ? "none"
+    : ($ENV{COLORTERM} // "") =~ /^(truecolor|24bit)$/ ? "truecolor" : "256"
+);
+sub to256 { my @c = map { int($_ / 255 * 5 + 0.5) } @_; 16 + 36 * $c[0] + 6 * $c[1] + $c[2] }
+sub sgr {    # escape sequence for a color; $bold brightens ANSI colors
+    my ($c, $bold) = @_;
+    return "" if $color_mode eq "none";
+    if (my $rgb = $c->{rgb}) {
+        return $color_mode eq "truecolor" ? "\e[38;2;$rgb->[0];$rgb->[1];$rgb->[2]m" : "\e[38;5;" . to256(@$rgb) . "m";
+    }
+    return "\e[" . ($bold ? "1;" : "0;") . (($c->{bright} ? 90 : 30) + $c->{ansi}) . "m" if defined $c->{ansi};
+    return $bold ? "\e[1m" : "";
+}
+my $RESET = $color_mode eq "none" ? "" : "\e[0m";
+
+# ----------------------------------------------------------------------------
+# Scheme selection
+# ----------------------------------------------------------------------------
+
+my $scheme_name = lc $art{scheme};
+if ($scheme_name eq "auto") {
+    my $m = (localtime)[4] + 1;
+    my $season = $m == 12 || $m <= 2 ? "winter" : $m <= 5 ? "spring" : $m <= 8 ? "summer" : "fall";
+    $scheme_name = lc($cfg->{auto}{$season} // "lakes");
+}
+if ($scheme_name eq "random") {
+    my @pool = split ' ', ($cfg->{random}{pool} // join(" ", keys %schemes));
+    $scheme_name = $pool[int rand @pool];
+}
+unless ($schemes{$scheme_name}) {
+    warn "welcome-art: unknown scheme '$scheme_name', using lakes\n";
+    $scheme_name = "lakes";
+}
+my $scheme = $schemes{$scheme_name};
+my $stype = lc($scheme->{type} // "depth");
+my $jitter = $scheme->{jitter} // 0.25;
+
+# ----------------------------------------------------------------------------
+# Per-cell geometry: depth (0 shore .. 1 deep), position, lake
+# ----------------------------------------------------------------------------
+
+my $MAXD = 6;
+sub depth_at {    # distance to the nearest shore; rows count double since cells are tall
+    my ($r, $c) = @_;
+    my $best = $MAXD;
+    for my $dr (-3 .. 3) {
+        for my $dc (-$MAXD .. $MAXD) {
+            my $d = max(abs($dr) * 2, abs($dc));
+            next if $d >= $best || ($dr == 0 && $dc == 0);
+            $best = $d unless $wet->($r + $dr, $c + $dc);
+        }
+    }
+    return ($best - 1) / ($MAXD - 1);
+}
+
+my @pins = map {
+    my $p = lc $_;
+    $p =~ /^(\d+),(\d+)$/ ? [$1, $2]
+        : $places{$p}     ? $places{$p}
+        : $p eq "none"    ? ()
+        : do { warn "welcome-art: unknown place '$p'\n"; () };
+} split ' ', $art{pins};
+my $origin = $pins[0] // [int($H / 2), int($W / 2)];
+
+my @cells;    # water cells: {r, c, lake, depth}
+for my $r (0 .. $H - 1) {
+    for my $c (0 .. $W - 1) {
+        next unless $wet->($r, $c);
+        push @cells, { r => $r, c => $c, lake => lake_of($r, $c), depth => depth_at($r, $c) };
+    }
+}
+
+# Depth relative to each lake's deepest point, so narrow lakes span the full
+# range of a gradient too
+my %lake_max;
+$lake_max{ $_->{lake} } = max($lake_max{ $_->{lake} } // 0, $_->{depth}) for @cells;
+$_->{rdepth} = $lake_max{ $_->{lake} } ? $_->{depth} / $lake_max{ $_->{lake} } : 0 for @cells;
+
+# ----------------------------------------------------------------------------
+# Colors and glyphs per cell
+# ----------------------------------------------------------------------------
+
+my $glyph_spec = $glyph_sets{ lc $art{glyphs} } // $art{glyphs};
+my @glyphs = split ' ', $glyph_spec;
+@glyphs = split //, $glyphs[0] if @glyphs == 1;
+@glyphs = ("•") unless @glyphs;
+my $gmode = lc $art{glyph_mode};
+my %lake_idx = map { $LAKES[$_] => $_ } 0 .. $#LAKES;
+
+my $glint = parse_color($art{glint_color});
+my $pin_color = parse_color($art{pin_color});
+
+my ($random_colors, %lake_ramps, $grad_stops, $grad_dir);
+if ($stype eq "random") {
+    $random_colors = parse_colors($scheme->{colors} // "default");
+} elsif ($stype eq "gradient") {
+    $grad_stops = [map { rgb_of($_) } @{ parse_colors($scheme->{stops} // "#ffffff") }];
+    $grad_dir = lc($scheme->{direction} // "west-east");
+} else {
+    my $all = $scheme->{all} // "#8fd3ff #1f4fbf";
+    %lake_ramps = map { $_ => [map { rgb_of($_) } @{ parse_colors($scheme->{$_} // $all) }] } @LAKES;
+}
+
+my $diag = sqrt(($H * 2) ** 2 + $W ** 2);
+sub dist_from_origin { my ($r, $c) = @_; sqrt((($r - $origin->[0]) * 2) ** 2 + ($c - $origin->[1]) ** 2) / $diag }
+
+for my $cell (@cells) {
+    my ($r, $c) = @$cell{qw(r c)};
+    my $t;
+    if ($stype eq "random") {
+        $cell->{color} = $random_colors->[int rand @$random_colors];
+    } else {
+        my $j = (rand() - 0.5) * $jitter;
+        if ($stype eq "gradient") {
+            $t = $grad_dir eq "north-south" ? $r / ($H - 1)
+               : $grad_dir eq "depth"       ? $cell->{rdepth}
+               : $grad_dir eq "radial"      ? min(1, dist_from_origin($r, $c) * 2.2)
+               :                              $c / ($W - 1);
+            $cell->{color} = { rgb => ramp($grad_stops, $t + $j) };
+        } else {
+            $cell->{color} = { rgb => ramp($lake_ramps{ $cell->{lake} }, $cell->{depth} + $j) };
+        }
+    }
+    $cell->{glint} = rand() < $art{glints};
+
+    $cell->{glyph} =
+          $gmode eq "random" ? $glyphs[int rand @glyphs]
+        : $gmode eq "depth"  ? $glyphs[min($#glyphs, int(($cell->{depth} + (rand() - 0.5) * 0.2) * @glyphs))]
+                               // $glyphs[0]
+        : $gmode eq "lake"   ? $glyphs[$lake_idx{ $cell->{lake} } % @glyphs]
+        :                      $glyphs[0];
+}
+
+# ----------------------------------------------------------------------------
+# Animation: each cell gets a reveal key in [0,1]; frames sweep a front across
+# ----------------------------------------------------------------------------
+
+my $style = lc $anim{style};
+$style = $ANIMATIONS[1 + int rand($#ANIMATIONS)] if $style eq "random";
+for my $cell (@cells) {
+    my ($r, $c) = @$cell{qw(r c)};
+    $cell->{key} =
+          $style eq "fill"   ? $cell->{depth} * 0.85 + rand() * 0.15
+        : $style eq "sweep"  ? $c / $W * 0.92 + rand() * 0.08
+        : $style eq "ripple" ? min(1, dist_from_origin($r, $c) * 1.6) * 0.95 + rand() * 0.05
+        : $style eq "rain"   ? rand()
+        :                      0;
+}
+
+my $cols = $cli{width} // $ENV{COLUMNS} // 100;
+my $rows = $cli{height} // $ENV{LINES} // 0;
+my $start = $cols < 45 ? 45 - $cols : 0;    # keep Michigan/Huron on narrow terminals
+my $len = min($cols, $W);
+my $pad = $cols > $W ? " " x int(($cols - $W) / 2) : "";
+
+my %pin_at = map { ("$_->[0],$_->[1]" => 1) } @pins;
+my %cell_at = map { ("$_->{r},$_->{c}" => $_) } @cells;
+my $CREST = 0.18;
+
+# Render one frame; $p is the front position (undef = final frame)
+sub frame {
+    my ($p, $shimmer) = @_;
+    my @lines;
+    for my $r (0 .. $H - 1) {
+        my $line = $pad;
+        for my $c ($start .. $start + $len - 1) {
+            if ($pin_at{"$r,$c"}) {
+                $line .= sgr($pin_color) . $art{pin_glyph} . $RESET;
+                next;
+            }
+            my $cell = $cell_at{"$r,$c"};
+            unless ($cell) {
+                $line .= " ";
+                next;
+            }
+            my ($color, $bold) = ($cell->{color}, 0);
+            my $lit = $cell->{glint};
+            if (defined $p) {
+                my $age = $p - $cell->{key};
+                if ($age < 0) {
+                    $line .= " ";
+                    next;
+                }
+                # Freshly revealed cells flash, then settle into their color
+                if ($age < $CREST) {
+                    my $f = 1 - $age / $CREST;
+                    $color = $color->{rgb} ? { rgb => mix($color->{rgb}, rgb_of($glint), $f * 0.8) } : $color;
+                    $bold = 1;
+                }
+                $lit ||= rand() < $shimmer if $shimmer;
+            }
+            $color = $glint if $lit;
+            $line .= sgr($color, $bold) . $cell->{glyph} . $RESET;
+        }
+        $line =~ s/\s+$//;
+        push @lines, $line;
+    }
+    return \@lines;
+}
+
+# ----------------------------------------------------------------------------
+# Output
+# ----------------------------------------------------------------------------
+
+my $animate = $style ne "none" && -t STDOUT && !$ENV{WELCOME_NO_ANIMATION}
+    && ($rows == 0 || $rows > $H + 2) && $anim{duration} > 0;
+
+my $stamp = ($ENV{XDG_CACHE_HOME} || "$ENV{HOME}/.cache") . "/welcome/last-animation";
+my $today = strftime("%Y-%m-%d", localtime);
+if ($animate && lc $anim{when} eq "daily") {
+    if (open(my $fh, "<", $stamp)) {
+        my $last = <$fh> // "";
+        chomp $last;
+        $animate = 0 if $last eq $today;
+    }
+}
+$animate = 0 if lc $anim{when} eq "never";
+
+unless ($animate) {
+    print "$_\n" for @{ frame(undef) };
+    exit 0;
+}
+
+if (lc $anim{when} eq "daily") {
+    (my $dir = $stamp) =~ s{/[^/]+$}{};
+    mkdir((($ENV{XDG_CACHE_HOME} || "$ENV{HOME}/.cache")));
+    mkdir($dir);
+    if (open(my $fh, ">", $stamp)) { print $fh "$today\n" }
+}
+
+# Any keypress skips to the end. The tty goes non-canonical so pending input
+# can be counted without reading it, leaving keystrokes for the shell prompt.
+my ($tty, $saved_term, $term);
+my $FIONREAD = $^O eq "darwin" ? 0x4004667f : 0x541B;
+if (open($tty, "<", "/dev/tty")) {
+    eval {
+        require POSIX;
+        $term = POSIX::Termios->new;
+        $term->getattr(fileno $tty) or die;
+        $saved_term = $term->getlflag;
+        $term->setlflag($saved_term & ~(POSIX::ICANON() | POSIX::ECHO()));
+        $term->setattr(fileno $tty, POSIX::TCSANOW());
+    };
+}
+my ($skip, $cursor_hidden) = (0, 0);
+sub restore_tty {
+    if (defined $saved_term) {
+        $term->setlflag($saved_term);
+        $term->setattr(fileno $tty, POSIX::TCSANOW());
+        undef $saved_term;
+    }
+    print "\e[?25h" if $cursor_hidden;
+    $cursor_hidden = 0;
+}
+$SIG{INT} = $SIG{TERM} = sub { $skip = 1 };
+END { restore_tty() }
+my $key_pending = sub {
+    return 0 unless $tty;
+    my $n = pack("L", 0);
+    return ioctl($tty, $FIONREAD, $n) && unpack("L", $n) > 0;
+};
+
+$| = 1;
+print "\e[?25l";
+$cursor_hidden = 1;
+my $frame_time = 1 / 30;
+my $nframes = max(2, int($anim{duration} / $frame_time));
+my $shimmer = $style eq "shimmer" ? $art{glints} * 6 + 0.05 : 0;
+for my $f (0 .. $nframes - 1) {
+    last if $skip || $key_pending->();
+    my $t0 = time;
+    my $p = $style eq "shimmer" ? 2 : ($f / ($nframes - 1)) * (1 + $CREST);
+    my $sh = $shimmer * (1 - $f / $nframes);
+    print "\e[${H}A" if $f > 0;
+    print "\e[2K$_\n" for @{ frame($p, $sh) };
+    my $left = $frame_time - (time - $t0);
+    sleep($left) if $left > 0;
+}
+print "\e[${H}A";
+print "\e[2K$_\n" for @{ frame(undef) };
+restore_tty();
+
+__DATA__
+Water is •; each row is wrapped in | | and is exactly 100 columns wide.
+|                  ••••••••••••••                                                                    |
+|                  ••••••••••••••                                                                    |
+|              ••••••••••••••••••••••••••••                                                          |
+|              ••••••••••••••••••••  ••••                                                            |
+|            ••••••••••••••••••••••••••••••••                                                        |
+|        ••••••••••••••••  ••••••••••••••••••••                          ••••                        |
+|      ••••••••••••••••  ••••••••••••••••••••••••                                                    |
+|    ••••••••••••••••  ••••••••••••••••      ••••  ••••••••••••••••••••••                            |
+|  ••••  ••••••••          ••••••                  ••        ••••••••                                |
+|  •••    ••••                          ••••••••••••••••••••••••••••••••••                           |
+|                                ••••••••••    ••••••••••••••••  ••••••••                ••••        |
+|                              ••••••••••••••        ••••••••••••    ••••  ••            ••••••      |
+|                              ••••••••••••            ••••••••••••              ••••••••••••••      |
+|                            ••  ••••••  ••            ••••••••••              ••••••••••••••        |
+|                            ••••••••••                ••••••••••            ••••••                  |
+|                          ••  ••••••••              ••••  ••••••          ••••••                    |
+|                              ••••••••              ••      ••••••              ••                  |
+|                        ••    ••••••••                      ••••          ••••••••                  |
+|                          ••  ••••••••                        ••        ••  ••••                    |
+|                              ••••••••••                    ••      ••••••••••                      |
+|                              ••••••••••••                  ••••  ••••••••••                        |
+|                              ••••••••••••                      ••••••••••                          |
+|                                ••••••••••                  ••••••••••                              |
+|                                ••••••••••                ••  ••••••••                              |
+|                                  ••••••                                                            |
+|                                   •••                                                              |

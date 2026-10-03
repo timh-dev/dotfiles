@@ -66,6 +66,7 @@ make packages   # All of the above
 | `starship` | `starship/.config/starship.toml`   | `~/.config/starship.toml`                  |
 | `vscode`   | `vscode/Library/Application Support/Code/User/...` | `~/Library/Application Support/Code/User/...` |
 | `ghostty`  | `ghostty/Library/Application Support/...` | `~/Library/Application Support/...` |
+| `welcome`  | `welcome/.config/welcome/welcome.conf` | `~/.config/welcome/welcome.conf`     |
 
 ## Not Linked (sourced or added to PATH)
 
@@ -75,6 +76,16 @@ These folders are **not** stow packages. They're referenced directly by `.zshrc`
 - `functions/` - Shell functions, sourced by `.zshrc`
 - `scripts/bin/` - Added to `$PATH` by `.zshrc`
 - `packages/` - Package lists for `make brew`, `make npm`, etc.
+
+## Welcome Screen
+
+New shells open with a Great Lakes map drawn by `scripts/bin/welcome-art`. Color schemes, glyphs, pins and the load animation are set in `welcome/.config/welcome/welcome.conf`. Try a look before committing to it:
+
+```bash
+welcome-art --list                                    # schemes, glyphs, places, animations
+welcome-art --scheme ice --animation ripple           # preview
+WELCOME_NO_ANIMATION=1 zsh                            # skip the animation
+```
 
 ## Adding a New Config
 
