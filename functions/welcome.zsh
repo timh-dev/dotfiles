@@ -32,81 +32,13 @@ function welcome() {
     local cols=${COLUMNS:-$(stty size 2>/dev/null | cut -d' ' -f2)}
     cols=${cols:-100}
     
-    # Define full ASCII art lines
-    local -a art=(
-        "                  ••••••••••••••                                                                "
-        "                  ••••••••••••••                                                                "
-        "              ••••••••••••••••••••••••••••                                                      "
-        "              ••••••••••••••••••••  ••••                                                        "
-        "            ••••••••••••••••••••••••••••••••                                                    "
-        "        ••••••••••••••••  ••••••••••••••••••••                          ••••                    "
-        "      ••••••••••••••••  ••••••••••••••••••••••••                                                "
-        "    ••••••••••••••••  ••••••••••••••••      ••••  ••••••••••••••••••••••                        "
-        "  ••••  ••••••••          ••••••                  ••        ••••••••                            "
-        "  •••    ••••                          ••••••••••••••••••••••••••••••••••                       "
-        "                                ••••••••••    ••••••••••••••••  ••••••••                ••••    "
-        "                              ••••••••••••••        ••••••••••••    ••••  ••            ••••••  "
-        "                              ••••••••••••            ••••••••••••              ••••••••••••••  "
-        "                            ••  ••••••  ••            ••••••••••              ••••••••••••••    "
-        "                            ••••••••••                ••••••••••            ••••••              "
-        "                          ••  ••••••••              ••••  ••••••          ••••••                "
-        "                              ••••••••              ••      ••••••              ••              "
-        "                        ••    ••••••••                      ••••          ••••••••              "
-        "                          ••  ••••••••                        ••        ••  ••••                "
-        "                              ••••••••••                    ••      ••••••••••                  "
-        "                              ••••••••••••                  ••••  ••••••••••                    "
-        "                              ••••••••••••                      ••••••••••                      "
-        "                                ••••••••••                  ••••••••••                          "
-        "                             ${green}⬤${reset}  ••••••••••                ••  ••••••••         "
-        "                                  ••••••                                                        "
-        "                                   •••                                                          "
-    )
-    
+    # Great Lakes art; looks are set in ~/.config/welcome/welcome.conf.
+    # Ctrl-C skips its animation without aborting shell startup.
+    setopt localoptions localtraps
+    trap '' INT
     echo ""
-    
-    # Dynamically trim each line based on terminal width
-    local output=""
-    local line_num=0
-    local art_width=100
-    local padding=0
-    
-    if [ "$cols" -ge "$art_width" ]; then
-        padding=$(( (cols - art_width) / 2 ))
-    fi
-    
-    for line in "${art[@]}"; do
-        ((line_num++))
-        local trimmed_line=""
-        if [ "$cols" -lt 45 ]; then
-            local skip=$((45 - cols))
-            trimmed_line="${line:$skip:$cols}"
-        elif [ "$cols" -lt 100 ]; then
-            trimmed_line="${line:0:$cols}"
-        else
-            trimmed_line="$line"
-        fi
-        
-        if [ $padding -gt 0 ]; then
-            output+="$(printf '%*s' $padding)$trimmed_line\n"
-        else
-            output+="$trimmed_line\n"
-        fi
-    done
-    
-    # Randomly colorize some dots 
-    output=$(echo -e "$output" | perl -pe '
-        s/•/
-            my $r = int(rand(8));
-            $r == 0 ? "\033[0;34m•\033[0m" :
-            $r == 1 ? "\033[0;33m•\033[0m" :
-            $r == 2 ? "\033[0;31m•\033[0m" :
-            $r == 3 ? "\033[0;35m•\033[0m" :
-            $r == 4 ? "\033[0;36m•\033[0m" : "•"
-        /ge
-    ')
-    
-    echo -e "$output"
-    
+    welcome-art --width "$cols" --height "${LINES:-0}"
+
     echo ""
     
     # Build info line with optional git info
