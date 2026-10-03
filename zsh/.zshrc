@@ -80,7 +80,7 @@ export EDITOR="vim"
 export VISUAL="vim"
 export PYTHONDONTWRITEBYTECODE=1
 export UV_PYTHON_PREFERENCE="only-managed"
-export NODE_ENV="development"
+#export NODE_ENV="development"
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
@@ -93,3 +93,6 @@ export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
 if [[ -o interactive ]] && [[ -z "$DOTFILES_NO_WELCOME" ]]; then
     welcome
 fi
+
+alias claude-ce='CLAUDE_CONFIG_DIR="$HOME/.claude-ce" claude'
+alias claude-personal='CLAUDE_CONFIG_DIR="$HOME/.claude-personal" claude'
